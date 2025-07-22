@@ -1,9 +1,8 @@
 import { upstoxService } from './upstoxService';
-import axios from 'axios';
 import { StockData, StockHistoryData, MarketStock } from '../types/stock';
 
 // Flag to control whether to use real Upstox data or simulated data
-let useRealData = false;
+let useRealData = true; // Changed to true - use real Upstox data by default
 
 // Cache for mapped NSE to Yahoo Finance symbols
 const symbolMappingCache: Record<string, string> = {};
@@ -13,6 +12,7 @@ const symbolMappingCache: Record<string, string> = {};
  */
 export const toggleRealData = () => {
   useRealData = !useRealData;
+  console.log(`Data source switched to: ${useRealData ? 'Real Upstox' : 'Simulated'}`);
 };
 
 /**
@@ -63,7 +63,7 @@ export const fetchStockData = async (symbol: string): Promise<StockData> => {
         const marketData = await upstoxService.fetchMarketData([symbol]);
         if (marketData && marketData.length > 0) {
           // Find the matching stock by symbol
-          const stock = marketData.find(s => 
+          const stock = marketData.find((s: MarketStock) => 
             s.SYMBOL === (symbol.split(':')[1] || symbol)
           );
           if (stock) {
@@ -107,7 +107,7 @@ export const fetchMultipleStocks = async (symbols: string[]): Promise<StockData[
           // Map requested symbols to found stocks, fall back to simulation if not found
           return symbols.map(symbol => {
             const baseSymbol = symbol.split(':')[1] || symbol;
-            const stock = marketData.find(s => s.SYMBOL === baseSymbol);
+            const stock = marketData.find((s: MarketStock) => s.SYMBOL === baseSymbol);
             return stock || simulateStockData(baseSymbol);
           });
         }
@@ -210,35 +210,4 @@ export const simulateHistoricalData = (symbol: string): StockHistoryData[] => {
   }
 
   return data;
-};
-
-/**
- * Get company name from symbol
- */
-const getCompanyName = (symbol: string): string => {
-  // Map common Indian symbols to company names
-  const symbolToName: Record<string, string> = {
-    'NIFTY50': 'Nifty 50 Index',
-    'SENSEX': 'BSE Sensex',
-    'RELIANCE': 'Reliance Industries Ltd.',
-    'TCS': 'Tata Consultancy Services Ltd.',
-    'HDFCBANK': 'HDFC Bank Ltd.',
-    'INFY': 'Infosys Ltd.',
-    'ICICIBANK': 'ICICI Bank Ltd.',
-    'HINDUNILVR': 'Hindustan Unilever Ltd.',
-    'SBIN': 'State Bank of India',
-    'BHARTIARTL': 'Bharti Airtel Ltd.',
-    'ITC': 'ITC Ltd.',
-    'KOTAKBANK': 'Kotak Mahindra Bank Ltd.',
-    'LT': 'Larsen & Toubro Ltd.',
-    'WIPRO': 'Wipro Ltd.',
-    'AXISBANK': 'Axis Bank Ltd.',
-    'BAJFINANCE': 'Bajaj Finance Ltd.',
-    'MARUTI': 'Maruti Suzuki India Ltd.',
-    'ASIANPAINT': 'Asian Paints Ltd.',
-    'HCLTECH': 'HCL Technologies Ltd.',
-    'SUNPHARMA': 'Sun Pharmaceutical Industries Ltd.'
-  };
-  
-  return symbolToName[symbol] || `${symbol} Ltd.`;
 }; 

@@ -6,7 +6,6 @@ const path = require('path');
 
 // Import routes
 const stockRoutes = require('./routes/stockRoutes');
-const upstoxRoutes = require('./routes/upstoxRoutes');
 const marketRoutes = require('./routes/marketRoutes');
 
 // Import middleware
@@ -26,7 +25,6 @@ app.use(logger);
 
 // Use routes
 app.use('/api/stocks', stockRoutes);
-app.use('/api/upstox', upstoxRoutes);
 app.use('/api/market', marketRoutes);
 
 // Health check endpoint (what frontend actually calls)

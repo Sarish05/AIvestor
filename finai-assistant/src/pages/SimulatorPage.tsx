@@ -62,21 +62,16 @@ import {
   FormLabel,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { FiTrendingUp, FiTrendingDown, FiDollarSign, FiPieChart, FiActivity, FiClock, FiArrowUp, FiArrowDown, FiChevronDown, FiPlus, FiSearch, FiRefreshCw, FiSettings, FiAlertCircle, FiCalendar } from 'react-icons/fi';
+import { FiTrendingUp, FiTrendingDown, FiArrowUp, FiArrowDown, FiChevronDown, FiPlus, FiSearch, FiRefreshCw, FiAlertCircle, FiCalendar } from 'react-icons/fi';
 import Navigation from '../components/Navigation';
 import StockChart from '../components/StockChart';
 import EnhancedStockChart from '../components/EnhancedStockChart';
 import PortfolioChart from '../components/PortfolioChart'; 
 import AnimatedCard from '../components/AnimatedCard';
 import ProtectedFeature from '../components/ProtectedFeature';
-import { fetchStockHistory, simulateStockData } from '../services/stockDataService';
-import MiniChart from '../components/MiniChart';
-import UpstoxAuth from '../components/UpstoxAuth';
-import { upstoxWebSocket } from '../services/upstoxWebSocket';
+import { simulateStockData } from '../services/stockDataService';
 import { upstoxService } from '../services/upstoxService';
-import { ChevronLeftIcon, ChevronRightIcon, ArrowUpIcon, ArrowDownIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import {
   MarketStock,
   PortfolioStock,
@@ -313,7 +308,6 @@ const SimulatorPage: React.FC = () => {
   const [csvSearchTerm, setCsvSearchTerm] = useState<string>('');
   const [csvSelectedSector, setCsvSelectedSector] = useState<string>('');
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [isUpstoxAuthenticated, setIsUpstoxAuthenticated] = useState<boolean>(false);
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
   const navigate = useNavigate();
   const [portfolio, setPortfolio] = useState<Portfolio>({
@@ -842,26 +836,7 @@ const SimulatorPage: React.FC = () => {
 
   // Add real-time data refresh effect
   useEffect(() => {
-    // Set up WebSocket callback for real-time data
-    upstoxWebSocket.setOnDataCallback((data: MarketStock) => {
-      setMarketStocks(prevStocks => {
-        const newStocks = [...prevStocks];
-        const index = newStocks.findIndex(stock => stock.SYMBOL === data.SYMBOL);
-        if (index !== -1) {
-          newStocks[index] = {
-            ...newStocks[index],
-            ...data,
-            lastUpdated: new Date().toISOString()
-          };
-        } else {
-          newStocks.push(data);
-        }
-        return newStocks;
-      });
-      setLastUpdated(new Date());
-    });
-
-    // Set up auto-refresh interval for market data
+    // Simple periodic refresh without WebSocket
     if (autoRefresh) {
       const refreshInterval = setInterval(() => {
         // Refresh market data every 5 minutes
@@ -871,47 +846,15 @@ const SimulatorPage: React.FC = () => {
       
       return () => {
         clearInterval(refreshInterval);
-        upstoxWebSocket.disconnect();
       };
     }
   }, [autoRefresh]);
 
-  // Handle Upstox auth state change
-  const handleAuthStateChange = (isAuthenticated: boolean) => {
-    setIsUpstoxAuthenticated(isAuthenticated);
-    // Refresh data when authentication state changes
-    if (isAuthenticated) {
-      refreshCSVData();
-    }
-  };
+  // Initialize component
 
   // Add toggle for auto-refresh
   const toggleAutoRefresh = () => {
     setAutoRefresh(!autoRefresh);
-    if (!autoRefresh) {
-      // Reconnect WebSocket when enabling auto-refresh
-      upstoxWebSocket.connect();
-      upstoxWebSocket.setOnDataCallback((data: MarketStock) => {
-        setMarketStocks(prevStocks => {
-          const newStocks = [...prevStocks];
-          const index = newStocks.findIndex(stock => stock.SYMBOL === data.SYMBOL);
-          if (index !== -1) {
-            newStocks[index] = {
-              ...newStocks[index],
-              ...data,
-              lastUpdated: new Date().toISOString()
-            };
-          } else {
-            newStocks.push(data);
-          }
-          return newStocks;
-        });
-        setLastUpdated(new Date());
-      });
-    } else {
-      // Disconnect WebSocket when disabling auto-refresh
-      upstoxWebSocket.disconnect();
-    }
   };
 
   const calculatePortfolioValue = () => {
@@ -923,80 +866,10 @@ const SimulatorPage: React.FC = () => {
     return ((totalValue - portfolio.initialInvestment) / portfolio.initialInvestment) * 100;
   };
 
-  // Handle search input change with debounce
-  const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
-
-  // Handle market search input - with dynamic API search
+  // Handle market search input - simplified without API search
   const handleMarketSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    
-    // Clear previous timeout
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-    
-    // Debounce the search to avoid too many API calls
-    const timeout = setTimeout(async () => {
-      if (value.trim().length > 0) {
-        setIsSearching(true);
-        try {
-          // Use the new searchStock function to search in preloaded stocks and API
-          const results = await upstoxService.searchStock(value, marketStocks);
-          
-          // If we got new stocks not in our current list, add them
-          if (results.length > 0) {
-            const newStocks = results.filter(result => {
-              // Check if this stock is already in our marketStocks
-              const symbol = result.symbol || result.SYMBOL;
-              return !marketStocks.some(stock => stock.SYMBOL === symbol);
-            });
-            
-            // If we found new stocks, add them to the marketStocks array
-            if (newStocks.length > 0) {
-              console.log('Adding new stocks from search:', newStocks);
-              
-              // Convert any results to MarketStock format if needed
-              const formattedNewStocks = newStocks.map(stock => {
-                // If it's already in MarketStock format, return as is
-                if (stock.SYMBOL) {
-                  return stock;
-                }
-                
-                // Otherwise convert it
-                return {
-                  SYMBOL: stock.symbol,
-                  NAME: stock.name,
-                  PRICE: 0, // We'll need to fetch this
-                  CHANGE: 0,
-                  CHANGE_PERCENT: 0,
-                  VOLUME: '0',
-                  MARKET_CAP: '0',
-                  PREV_CLOSE: 0,
-                  OPEN: 0,
-                  HIGH: 0,
-                  LOW: 0,
-                  CLOSE: 0,
-                  SECTOR: stock.sector || '',
-                  timestamp: new Date(),
-                  lastUpdated: new Date().toISOString()
-                };
-              });
-              
-              // Add the new stocks to our list
-              setMarketStocks(prevStocks => [...prevStocks, ...formattedNewStocks]);
-            }
-          }
-        } catch (error) {
-          console.error('Error searching for stocks:', error);
-        } finally {
-          setIsSearching(false);
-        }
-      }
-    }, 500); // 500ms debounce
-    
-    setSearchTimeout(timeout);
   };
 
   const chartRef = useRef<any>(null);
@@ -1056,11 +929,6 @@ const SimulatorPage: React.FC = () => {
       
       <Box as="main" pt="120px">
         <Container maxW="container.xl" px={4}>
-          {/* Add Upstox Auth component near the top of the page */}
-          <Box mb={6}>
-            <UpstoxAuth onAuthStateChange={handleAuthStateChange} />
-          </Box>
-          
           {/* Dashboard Heading */}
           <Flex justify="space-between" align="flex-start" mb={8}>
             <Box>
@@ -1411,9 +1279,7 @@ const SimulatorPage: React.FC = () => {
                     
                     <Flex justify="space-between" align="center" mb={4}>
                       <Text fontSize="sm" color="gray.400">
-                        {isUpstoxAuthenticated 
-                          ? "Using real-time market data from Upstox" 
-                          : "Using simulated market data"}
+                        Using real-time market data from Upstox
                       </Text>
                       <Flex align="center">
                         <Text fontSize="sm" color="gray.400" mr={2}>Auto-refresh:</Text>

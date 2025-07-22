@@ -3,7 +3,6 @@ import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import SimulatorPage from './pages/SimulatorPage';
-import UpstoxCallback from './pages/UpstoxCallback';
 import AuthPage from './pages/AuthPage'; // Added import statement for AuthPage
 import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
@@ -50,7 +49,6 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/simulator" element={<SimulatorPage />} />
-            <Route path="/upstox/callback" element={<UpstoxCallback />} />
             <Route path="/discovery" element={<DiscoveryPage />} />
             <Route path="/education" element={<EducationPage />} />
             <Route path="/community" element={<CommunityPage />} />
