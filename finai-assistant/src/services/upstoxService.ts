@@ -1,11 +1,11 @@
 import { MarketStock, StockHistoryData } from '../types/stock';
 
-// API endpoints - Using our upstox-server implementation
-const API_BASE_URL = 'http://localhost:5001'; // Updated to match server port
-const MARKET_DATA_ENDPOINT = `${API_BASE_URL}/api/market-data`;
-const HISTORICAL_DATA_ENDPOINT = `${API_BASE_URL}/api/historical-data`;
-const API_STATUS_ENDPOINT = `${API_BASE_URL}/api/status`;
-const API_TEST_ENDPOINT = `${API_BASE_URL}/api/test`;
+// API endpoints - Using our new modular backend structure
+const API_BASE_URL = 'http://localhost:5001'; // Main backend server
+const MARKET_DATA_ENDPOINT = `${API_BASE_URL}/api/stocks/market-data`;
+const HISTORICAL_DATA_ENDPOINT = `${API_BASE_URL}/api/stocks/historical-data`;
+const API_STATUS_ENDPOINT = `${API_BASE_URL}/api/stocks/health`;
+const API_TEST_ENDPOINT = `${API_BASE_URL}/api/upstox/test`;
 
 /**
  * Fetch real-time market data for multiple symbols
