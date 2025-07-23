@@ -7,6 +7,9 @@ const path = require('path');
 // Import routes
 const stockRoutes = require('./routes/stockRoutes');
 const marketRoutes = require('./routes/marketRoutes');
+const finnhubRoutes = require('./routes/finnhubRoutes');
+const newsRoutes = require('./routes/newsRoutes');
+const youtubeRoutes = require('./routes/youtubeRoutes');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -26,6 +29,9 @@ app.use(logger);
 // Use routes
 app.use('/api/stocks', stockRoutes);
 app.use('/api/market', marketRoutes);
+app.use('/api/finnhub', finnhubRoutes);
+app.use('/api/news', newsRoutes);
+app.use('/api/youtube', youtubeRoutes);
 
 // Health check endpoint (what frontend actually calls)
 app.get('/api/stocks/health', (req, res) => {
@@ -46,6 +52,9 @@ if (require.main === module) {
     console.log(`📊 Stock API available at http://localhost:${PORT}/api/stocks`);
     console.log(`📈 Upstox API available at http://localhost:${PORT}/api/upstox`);
     console.log(`💹 Market API available at http://localhost:${PORT}/api/market`);
+    console.log(`📰 Finnhub API available at http://localhost:${PORT}/api/finnhub`);
+    console.log(`📧 News API available at http://localhost:${PORT}/api/news`);
+    console.log(`📺 YouTube API available at http://localhost:${PORT}/api/youtube`);
   });
 }
 

@@ -6,7 +6,7 @@ import Navigation from '../components/Navigation';
 import AnimatedCard from '../components/AnimatedCard';
 import StockChart from '../components/StockChart';
 import ProtectedFeature from '../components/ProtectedFeature';
-import { getTrendingStocks, getMarketNews, TrendingStock, getIndianTrendingStocks, getIndianMarketNews, CURRENCY_SYMBOL } from '../services/finnhubService';
+import { getTrendingStocks, getMarketNews, TrendingStock, getIndianTrendingStocks, getIndianMarketNews, CURRENCY_SYMBOL } from '../services/finnhubServiceBackend';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);

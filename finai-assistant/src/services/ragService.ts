@@ -1,5 +1,6 @@
 import { searchDocuments, formatDocumentsAsString } from "./documentService";
-import { fetchFinancialNews, formatNewsAsString } from "./newsService";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { fetchFinancialNews, formatNewsAsString } from "./newsServiceBackend";
 
 // AI Chatbot Server URL (new modular backend)
 const AI_SERVER_URL = "http://localhost:5003";
@@ -41,7 +42,7 @@ export const processQuery = async (
     
     // 3. Fetch relevant news
     const newsArticles = await fetchFinancialNews(query, 3);
-    const newsData = formatNewsAsString(newsArticles);
+    const newsData = await formatNewsAsString(newsArticles);
     
     // 4. Create the prompt with context and news
     const prompt = createSystemPrompt(context, userPreferences, newsData, query);

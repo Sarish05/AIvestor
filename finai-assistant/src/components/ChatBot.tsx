@@ -14,7 +14,7 @@ import {
   fetchCompanyNews, 
   formatNewsAsString,
   NewsArticle 
-} from '../services/newsService';
+} from '../services/newsServiceBackend';
 
 const MotionBox = motion(Box);
 const AnimatedBox = animated(Box);

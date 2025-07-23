@@ -5,7 +5,7 @@ import { FiAward, FiBookOpen, FiCheck, FiCheckCircle, FiClock, FiDollarSign, FiE
 import Navigation from '../components/Navigation';
 import AnimatedCard from '../components/AnimatedCard';
 import ProtectedFeature from '../components/ProtectedFeature';
-import { getPersonalizedRecommendations, getEducationalVideos, Video } from '../services/youtubeServices';
+import { getPersonalizedRecommendations, getEducationalVideos, Video } from '../services/youtubeServicesBackend';
 
 const MotionBox = motion(Box);
 

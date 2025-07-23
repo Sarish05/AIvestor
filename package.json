@@ -10,9 +10,7 @@
     "install-frontend": "cd finai-assistant && npm install",
     "install-all": "npm run install-backend && npm run install-frontend",
     "start": "npm run start-backend",
-    "dev": "concurrently \"npm run start-backend-all\" \"npm run start-frontend\"",
-    "legacy-upstox": "node upstox-server.js",
-    "legacy-server": "node server.js"
+    "dev": "concurrently \"npm run start-backend-all\" \"npm run start-frontend\""
   },
   "dependencies": {
     "axios": "^1.8.4",
