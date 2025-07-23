@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, forwardRef } from 'react';
+import React, { useState, useEffect, forwardRef } from 'react';
 import {
   Box,
   Flex,
@@ -18,7 +18,7 @@ import {
   Badge
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiTrendingUp, FiTrendingDown, FiInfo, FiRefreshCw, FiClock } from 'react-icons/fi';
+import { FiRefreshCw, FiClock } from 'react-icons/fi';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -35,7 +35,6 @@ import {
 import { Line } from 'react-chartjs-2';
 import 'chartjs-adapter-date-fns';
 import { StockHistoryData } from '../types/stock';
-import { upstoxService } from '../services/upstoxService';
 
 // Register ChartJS components
 ChartJS.register(
@@ -119,9 +118,6 @@ const EnhancedStockChart = forwardRef<any, EnhancedStockChartProps>(({
   // Get color mode values
   const gridColor = useColorModeValue('rgba(0, 0, 0, 0.1)', 'rgba(255, 255, 255, 0.1)');
   const textColor = useColorModeValue('gray.600', 'gray.300');
-  const chartColor = change >= 0 ? 'green.500' : 'red.500';
-  const chartGradientTop = change >= 0 ? 'rgba(72, 187, 120, 0.2)' : 'rgba(245, 101, 101, 0.2)';
-  const chartGradientBottom = 'rgba(0, 0, 0, 0)';
   const additionalStatsBg = useColorModeValue('gray.50', 'gray.700');
   const positiveColor = '#48BB78';
   const negativeColor = '#F56565';
@@ -140,12 +136,17 @@ const EnhancedStockChart = forwardRef<any, EnhancedStockChartProps>(({
       setIsChartLoading(true);
       try {
         console.log(`Fetching chart data for ${symbol} with interval ${timeInterval}`);
-        const data = await upstoxService.fetchHistoricalData(symbol, timeInterval);
-        if (data && data.length > 0) {
-          setChartData(data);
-          setLastUpdated(new Date());
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001'}/api/stocks/historical-data?symbol=${symbol}&interval=${timeInterval}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            setChartData(data);
+            setLastUpdated(new Date());
+          } else {
+            console.warn(`No data received for ${symbol}`);
+          }
         } else {
-          console.warn(`No data received for ${symbol}`);
+          throw new Error('Failed to fetch historical data');
         }
       } catch (error) {
         console.error(`Error fetching chart data for ${symbol}:`, error);
@@ -281,10 +282,15 @@ const EnhancedStockChart = forwardRef<any, EnhancedStockChartProps>(({
     const fetchData = async () => {
       setIsChartLoading(true);
       try {
-        const data = await upstoxService.fetchHistoricalData(symbol, timeInterval);
-        if (data && data.length > 0) {
-          setChartData(data);
-          setLastUpdated(new Date());
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001'}/api/stocks/historical-data?symbol=${symbol}&interval=${timeInterval}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.length > 0) {
+            setChartData(data);
+            setLastUpdated(new Date());
+          }
+        } else {
+          throw new Error('Failed to fetch historical data');
         }
       } catch (error) {
         console.error('Error refreshing chart data:', error);

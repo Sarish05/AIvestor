@@ -1,9 +1,6 @@
 import { searchDocuments, formatDocumentsAsString } from "./documentService";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { fetchFinancialNews, formatNewsAsString } from "./newsServiceBackend";
 
-// AI Chatbot Server URL (new modular backend)
-const AI_SERVER_URL = "http://localhost:5003";
 const GEMINI_API_KEY = "AIzaSyBBINhHV1--cR8VisK8UKxf0oEfeNhmd_g";
 
 // System prompt template for the RAG implementation

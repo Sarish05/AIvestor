@@ -1,5 +1,7 @@
-import { upstoxService } from './upstoxService';
 import { StockData, StockHistoryData, MarketStock } from '../types/stock';
+
+// Backend base URL
+const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5001';
 
 // Flag to control whether to use real Upstox data or simulated data
 let useRealData = true; // Changed to true - use real Upstox data by default
@@ -57,22 +59,24 @@ export const getYahooFinanceSymbol = (symbol: string): string => {
 export const fetchStockData = async (symbol: string): Promise<StockData> => {
   try {
     if (useRealData) {
-      // Try to get data from Upstox
+      // Try to get data from backend (which uses Upstox)
       try {
-        // Get market data for the single symbol
-        const marketData = await upstoxService.fetchMarketData([symbol]);
-        if (marketData && marketData.length > 0) {
-          // Find the matching stock by symbol
-          const stock = marketData.find((s: MarketStock) => 
-            s.SYMBOL === (symbol.split(':')[1] || symbol)
-          );
-          if (stock) {
-            return stock;
+        const response = await fetch(`${BACKEND_BASE_URL}/api/stocks/market-data?instruments=${symbol}`);
+        if (response.ok) {
+          const marketData = await response.json();
+          if (marketData && marketData.length > 0) {
+            // Find the matching stock by symbol
+            const stock = marketData.find((s: MarketStock) => 
+              s.SYMBOL === (symbol.split(':')[1] || symbol)
+            );
+            if (stock) {
+              return stock;
+            }
           }
         }
       } catch (error) {
-        console.error(`Error fetching Upstox data for ${symbol}:`, error);
-        // Fall back to simulated data if Upstox fails
+        console.error(`Error fetching backend stock data for ${symbol}:`, error);
+        // Fall back to simulated data if backend fails
       }
     }
     
@@ -100,20 +104,23 @@ export const fetchStockData = async (symbol: string): Promise<StockData> => {
 export const fetchMultipleStocks = async (symbols: string[]): Promise<StockData[]> => {
   try {
     if (useRealData) {
-      // Try to get data from Upstox
+      // Try to get data from backend (which uses Upstox)
       try {
-        const marketData = await upstoxService.fetchMarketData(symbols);
-        if (marketData && marketData.length > 0) {
-          // Map requested symbols to found stocks, fall back to simulation if not found
-          return symbols.map(symbol => {
-            const baseSymbol = symbol.split(':')[1] || symbol;
-            const stock = marketData.find((s: MarketStock) => s.SYMBOL === baseSymbol);
-            return stock || simulateStockData(baseSymbol);
-          });
+        const response = await fetch(`${BACKEND_BASE_URL}/api/stocks/market-data?instruments=${symbols.join(',')}`);
+        if (response.ok) {
+          const marketData = await response.json();
+          if (marketData && marketData.length > 0) {
+            // Map requested symbols to found stocks, fall back to simulation if not found
+            return symbols.map(symbol => {
+              const baseSymbol = symbol.split(':')[1] || symbol;
+              const stock = marketData.find((s: MarketStock) => s.SYMBOL === baseSymbol);
+              return stock || simulateStockData(baseSymbol);
+            });
+          }
         }
       } catch (error) {
-        console.error('Error fetching Upstox market data:', error);
-        // Fall back to simulated data if Upstox fails
+        console.error('Error fetching backend market data:', error);
+        // Fall back to simulated data if backend fails
       }
     }
     
@@ -141,16 +148,19 @@ export const fetchMultipleStocks = async (symbols: string[]): Promise<StockData[
 export const fetchStockHistory = async (symbol: string, interval = '1D'): Promise<StockHistoryData[]> => {
   if (useRealData) {
     try {
-      // Use the upstoxService implementation
-      const data = await upstoxService.fetchHistoricalData(symbol, interval);
-      if (data && data.length > 0) {
-        return data;
-      } else {
-        console.warn(`No historical data found for ${symbol}, falling back to simulation`);
-        return simulateHistoricalData(symbol);
+      // Use the backend for historical data (which uses Upstox)
+      const response = await fetch(`${BACKEND_BASE_URL}/api/stocks/historical-data?symbol=${symbol}&interval=${interval}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          return data;
+        } else {
+          console.warn(`No historical data found for ${symbol}, falling back to simulation`);
+          return simulateHistoricalData(symbol);
+        }
       }
     } catch (error) {
-      console.error('Error fetching stock history:', error);
+      console.error('Error fetching stock history from backend:', error);
       return simulateHistoricalData(symbol);
     }
   }

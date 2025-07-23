@@ -10,7 +10,6 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/ge
 import { addDocument } from '../services/documentService';
 import { 
   fetchFinancialNews, 
-  fetchBusinessHeadlines, 
   fetchCompanyNews, 
   formatNewsAsString,
   NewsArticle 

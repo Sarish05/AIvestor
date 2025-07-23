@@ -22,20 +22,14 @@ import {
   Input,
   NumberInput,
   NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
   useDisclosure,
   Text,
   Switch,
   Spinner,
   VStack,
   HStack,
-  IconButton,
-  Tooltip,
   Grid,
   GridItem,
-  Tag,
   Divider,
   Stat,
   StatLabel,
@@ -67,471 +61,51 @@ import Navigation from '../components/Navigation';
 import StockChart from '../components/StockChart';
 import EnhancedStockChart from '../components/EnhancedStockChart';
 import PortfolioChart from '../components/PortfolioChart'; 
-import AnimatedCard from '../components/AnimatedCard';
 import ProtectedFeature from '../components/ProtectedFeature';
-import { simulateStockData } from '../services/stockDataService';
-import { upstoxService } from '../services/upstoxService';
-import { useNavigate } from 'react-router-dom';
 import {
   MarketStock,
   PortfolioStock,
-  Portfolio,
-  Transaction,
-  StockHistoryData
+  Portfolio
 } from '../types/stock';
 
 const MotionBox = motion(Box);
-const MotionFlex = motion(Flex);
-
-// Add fallback stock data in case the CSV loading fails
-const fallbackStocks: PortfolioStock[] = [
-  {
-    symbol: 'RELIANCE',
-    name: 'Reliance Industries Limited',
-    shares: 10,
-    purchasePrice: 142.53,
-    currentPrice: 156.37,
-    totalValue: 1563.70,
-    profitLoss: 1.42,
-    profitLossPercentage: 0.91,
-    purchaseDate: '2023-03-15',
-    lastUpdated: '2023-05-22',
-    sector: 'Energy',
-    transactions: [],
-    weight: 15.6370
-  },
-  {
-    symbol: 'TCS',
-    name: 'Tata Consultancy Services Limited',
-    shares: 6,
-    purchasePrice: 292.75,
-    currentPrice: 309.40,
-    totalValue: 1856.40,
-    profitLoss: -2.83,
-    profitLossPercentage: -0.91,
-    purchaseDate: '2023-02-08',
-    lastUpdated: '2023-05-22',
-    sector: 'Technology',
-    transactions: [],
-    weight: 18.564
-  },
-  {
-    symbol: 'HDFCBANK',
-    name: 'HDFC Bank Limited',
-    shares: 10,
-    purchasePrice: 142.53,
-    currentPrice: 156.37,
-    totalValue: 1563.70,
-    profitLoss: 1.42,
-    profitLossPercentage: 0.91,
-    purchaseDate: '2023-03-15',
-    lastUpdated: '2023-05-22',
-    sector: 'Financial Services',
-    transactions: [],
-    weight: 15.637
-  },
-  {
-    symbol: 'INFY',
-    name: 'Infosys Limited',
-    shares: 10,
-    purchasePrice: 142.53,
-    currentPrice: 156.37,
-    totalValue: 1563.70,
-    profitLoss: 1.42,
-    profitLossPercentage: 0.91,
-    purchaseDate: '2023-03-15',
-    lastUpdated: '2023-05-22',
-    sector: 'Technology',
-    transactions: [],
-    weight: 15.637
-  },
-  {
-    symbol: 'ICICIBANK',
-    name: 'ICICI Bank Limited',
-    shares: 10,
-    purchasePrice: 142.53,
-    currentPrice: 156.37,
-    totalValue: 1563.70,
-    profitLoss: 1.42,
-    profitLossPercentage: 0.91,
-    purchaseDate: '2023-03-15',
-    lastUpdated: '2023-05-22',
-    sector: 'Financial Services',
-    transactions: [],
-    weight: 15.637
-  },
-  {
-    symbol: 'BHARTIARTL',
-    name: 'Bharti Airtel Limited',
-    shares: 10,
-    purchasePrice: 142.53,
-    currentPrice: 156.37,
-    totalValue: 1563.70,
-    profitLoss: 1.42,
-    profitLossPercentage: 0.91,
-    purchaseDate: '2023-03-15',
-    lastUpdated: '2023-05-22',
-    sector: 'Telecommunications',
-    transactions: [],
-    weight: 15.637
-  },
-  {
-    symbol: 'HINDUNILVR',
-    name: 'Hindustan Unilever Limited',
-    shares: 10,
-    purchasePrice: 142.53,
-    currentPrice: 156.37,
-    totalValue: 1563.70,
-    profitLoss: 1.42,
-    profitLossPercentage: 0.91,
-    purchaseDate: '2023-03-15',
-    lastUpdated: '2023-05-22',
-    sector: 'Consumer Goods',
-    transactions: [],
-    weight: 15.637
-  },
-  {
-    symbol: 'ITC',
-    name: 'ITC Limited',
-    shares: 10,
-    purchasePrice: 142.53,
-    currentPrice: 156.37,
-    totalValue: 1563.70,
-    profitLoss: 1.42,
-    profitLossPercentage: 0.91,
-    purchaseDate: '2023-03-15',
-    lastUpdated: '2023-05-22',
-    sector: 'Consumer Goods',
-    transactions: [],
-    weight: 15.637
-  },
-  {
-    symbol: 'SBIN',
-    name: 'State Bank of India',
-    shares: 10,
-    purchasePrice: 142.53,
-    currentPrice: 156.37,
-    totalValue: 1563.70,
-    profitLoss: 1.42,
-    profitLossPercentage: 0.91,
-    purchaseDate: '2023-03-15',
-    lastUpdated: '2023-05-22',
-    sector: 'Financial Services',
-    transactions: [],
-    weight: 15.637
-  },
-  {
-    symbol: 'KOTAKBANK',
-    name: 'Kotak Mahindra Bank Limited',
-    shares: 10,
-    purchasePrice: 142.53,
-    currentPrice: 156.37,
-    totalValue: 1563.70,
-    profitLoss: 1.42,
-    profitLossPercentage: 0.91,
-    purchaseDate: '2023-03-15',
-    lastUpdated: '2023-05-22',
-    sector: 'Financial Services',
-    transactions: [],
-    weight: 15.637
-  }
-];
-
-// Improved CSV parser function
-const parseCSV = (csvText: string): PortfolioStock[] => {
-  try {
-    console.log("Starting CSV parsing");
-    // Split the CSV by lines and filter out empty lines
-    const lines = csvText.split('\n').filter(line => line.trim() !== '');
-    console.log(`CSV has ${lines.length} lines`);
-    
-    if (lines.length <= 1) {
-      console.error("CSV file only has header or is empty");
-      return [];
-    }
-    
-    // The first line contains headers
-    const headers = lines[0].split(',').map(header => header.trim());
-    console.log("CSV headers:", headers);
-    
-    // Process the remaining lines
-    const results: PortfolioStock[] = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      
-      // Basic CSV parsing - this is a simplified approach for basic CSV files
-      // For more complex CSVs with quoted fields containing commas, a more robust parser would be needed
-      const values = line.split(',');
-      
-      // Create an object with the headers as keys
-      const stock: any = {};
-      
-      // Map values to keys
-      headers.forEach((header, index) => {
-        if (index < values.length) {
-          // Remove quotes if present
-          const value = values[index].trim().replace(/^"(.*)"$/, '$1');
-          stock[header] = value;
-        }
-      });
-      
-      // Only add if it has the required fields
-      if (stock.symbol && stock.name) {
-        results.push(stock as PortfolioStock);
-      }
-    }
-    
-    console.log(`Successfully parsed ${results.length} stocks from CSV`);
-    return results;
-  } catch (error) {
-    console.error('Error parsing CSV:', error);
-    return [];
-  }
-};
 
 const SimulatorPage: React.FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [activeTab, setActiveTab] = useState(0);
   const [buyAmount, setBuyAmount] = useState(1000);
   const [selectedStock, setSelectedStock] = useState<MarketStock | PortfolioStock | null>(null);
   const [selectedChartInterval, setSelectedChartInterval] = useState<string>('1M');
   const [transactionType, setTransactionType] = useState<'buy' | 'sell'>('buy');
-  const [marketStocks, setMarketStocks] = useState<MarketStock[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [marketStocks] = useState<MarketStock[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedSector, setSelectedSector] = useState<string | null>(null);
+  const [selectedSector] = useState<string | null>(null);
   const [showStockDetail, setShowStockDetail] = useState(false);
-  const [csvStocks, setCsvStocks] = useState<PortfolioStock[]>([]);
-  const [isLoadingCSV, setIsLoadingCSV] = useState(true);
-  const [csvSearchTerm, setCsvSearchTerm] = useState<string>('');
-  const [csvSelectedSector, setCsvSelectedSector] = useState<string>('');
+  const [isLoadingCSV, setIsLoadingCSV] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
-  const navigate = useNavigate();
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
   const [portfolio, setPortfolio] = useState<Portfolio>({
     cash: 100000,
     assets: [],
     transactions: [],
     initialInvestment: 100000
   });
-  const [error, setError] = useState<string | null>(null);
-  
-  // Mock portfolio data
-  const [mockPortfolio, setMockPortfolio] = useState({
-    totalValue: 10420.68,
-    initialInvestment: 10000,
-    cash: 2500.32,
-    returnPercentage: 4.21,
-    dailyChange: -128.42,
-    dailyChangePercentage: -1.22,
-    assets: [
-      {
-        id: 'AAPL',
-        name: 'Apple Inc.',
-        value: 2345.60,
-        shares: 15,
-        avgBuyPrice: 142.53,
-        currentPrice: 156.37,
-        change: 1.42,
-        changePercentage: 0.91,
-        weight: 29.89,
-        sector: 'Technology',
-        transactions: [
-          { date: '2023-03-15', type: 'buy', shares: 10, price: 145.32, total: 1453.20 },
-          { date: '2023-05-22', type: 'buy', shares: 5, price: 137.15, total: 685.75 }
-        ]
-      },
-      {
-        id: 'MSFT',
-        name: 'Microsoft Corporation',
-        value: 1856.40,
-        shares: 6,
-        avgBuyPrice: 292.75,
-        currentPrice: 309.40,
-        change: -2.83,
-        changePercentage: -0.91,
-        weight: 23.65,
-        sector: 'Technology',
-        transactions: [
-          { date: '2023-02-08', type: 'buy', shares: 6, price: 292.75, total: 1756.50 }
-        ]
-      },
-      {
-        id: 'TSLA',
-        name: 'Tesla, Inc.',
-        value: 1254.20,
-        shares: 5,
-        avgBuyPrice: 233.76,
-        currentPrice: 250.84,
-        change: -8.22,
-        changePercentage: -3.17,
-        weight: 15.98,
-        sector: 'Automotive',
-        transactions: [
-          { date: '2023-04-03', type: 'buy', shares: 5, price: 233.76, total: 1168.80 }
-        ]
-      },
-      {
-        id: 'AMZN',
-        name: 'Amazon.com, Inc.',
-        value: 1482.16,
-        shares: 12,
-        avgBuyPrice: 128.32,
-        currentPrice: 123.51,
-        change: -2.28,
-        changePercentage: -1.81,
-        weight: 18.88,
-        sector: 'Consumer Cyclical',
-        transactions: [
-          { date: '2023-01-22', type: 'buy', shares: 10, price: 132.45, total: 1324.50 },
-          { date: '2023-06-05', type: 'buy', shares: 2, price: 110.65, total: 221.30 }
-        ]
-      },
-      {
-        id: 'GOOGL',
-        name: 'Alphabet Inc.',
-        value: 982.00,
-        shares: 8,
-        avgBuyPrice: 115.43,
-        currentPrice: 122.75,
-        change: 0.92,
-        changePercentage: 0.75,
-        weight: 12.52,
-        sector: 'Communication Services',
-        transactions: [
-          { date: '2023-02-18', type: 'buy', shares: 8, price: 115.43, total: 923.44 }
-        ]
-      }
-    ],
-    transactions: [
-      { date: '2023-06-05', ticker: 'AMZN', type: 'buy', shares: 2, price: 110.65, total: 221.30 },
-      { date: '2023-05-22', ticker: 'AAPL', type: 'buy', shares: 5, price: 137.15, total: 685.75 },
-      { date: '2023-04-03', ticker: 'TSLA', type: 'buy', shares: 5, price: 233.76, total: 1168.80 },
-      { date: '2023-03-15', ticker: 'AAPL', type: 'buy', shares: 10, price: 145.32, total: 1453.20 },
-      { date: '2023-02-18', ticker: 'GOOGL', type: 'buy', shares: 8, price: 115.43, total: 923.44 },
-      { date: '2023-02-08', ticker: 'MSFT', type: 'buy', shares: 6, price: 292.75, total: 1756.50 },
-      { date: '2023-01-22', ticker: 'AMZN', type: 'buy', shares: 10, price: 132.45, total: 1324.50 },
-      { date: '2023-01-01', ticker: '', type: 'deposit', shares: 0, price: 0, total: 10000.00 }
-    ]
-  });
 
-  // Load real market data
+  // Load real market data - removed for yfinance implementation
   useEffect(() => {
-    const fetchRealStockData = async () => {
-      try {
-        setLoading(true);
-        // List of popular Indian stocks for market data
-        const symbols = [
-          'NSE:RELIANCE', 'NSE:TCS', 'NSE:HDFCBANK', 'NSE:INFY',
-          'NSE:ICICIBANK', 'NSE:HINDUNILVR', 'NSE:SBIN', 'NSE:BHARTIARTL',
-          'NSE:ITC', 'NSE:TATAMOTORS', 'NSE:KOTAKBANK', 'NSE:MARUTI'
-        ];
-        
-        const stocksData = await upstoxService.fetchMarketData(symbols);
-        setMarketStocks(stocksData);
-      } catch (error) {
-        console.error('Error fetching market stocks:', error);
-        // Fallback to simulation if API fails
-        const symbols = [
-          'NSE:RELIANCE', 'NSE:TCS', 'NSE:HDFCBANK', 'NSE:INFY',
-          'NSE:ICICIBANK', 'NSE:HINDUNILVR', 'NSE:SBIN', 'NSE:BHARTIARTL',
-          'NSE:ITC', 'NSE:TATAMOTORS', 'NSE:KOTAKBANK', 'NSE:MARUTI'
-        ];
-        const fallbackData = symbols.map(symbol => 
-          simulateStockData(symbol.split(':')[1] || symbol)
-        );
-        setMarketStocks(fallbackData);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchRealStockData();
-    
-    // Refresh data every 1 minute
-    const intervalId = setInterval(() => {
-      fetchRealStockData();
-    }, 60 * 1000);
-    
-    return () => clearInterval(intervalId);
+    // Market data will be fetched using yfinance
+    setLoading(false);
   }, []);
 
-  // Load CSV stocks data
+  // Load CSV stocks data - removed for yfinance implementation
   useEffect(() => {
-    const loadCSVStocks = async () => {
-      try {
-        setIsLoadingCSV(true);
-        console.log("Loading CSV stocks from public/stocks.csv");
-        
-        // Use a relative path to access the CSV file correctly
-        const response = await fetch('/stocks.csv');
-        const csvText = await response.text();
-        console.log("CSV loaded, length:", csvText.length);
-        
-        // Parse CSV manually
-        const parsed = parseCSV(csvText);
-        console.log("Parsed CSV stocks:", parsed.length);
-        
-        // Filter out any incomplete data
-        const validStocks = parsed.filter(
-          stock => stock.symbol && stock.name && stock.sector
-        );
-        console.log("Valid CSV stocks:", validStocks.length);
-        
-        if (validStocks.length > 0) {
-          // Take only the first 100 stocks to avoid performance issues
-          const limitedStocks = validStocks.slice(0, 100);
-          console.log("Setting CSV stocks:", limitedStocks.length);
-          setCsvStocks(limitedStocks);
-        } else {
-          // If no valid stocks were found, use the fallback data
-          console.log("No valid stocks found, using fallback data");
-          setCsvStocks(fallbackStocks);
-        }
-        
-        setIsLoadingCSV(false);
-      } catch (error) {
-        console.error('Error loading CSV file:', error);
-        // Use fallback data in case of error
-        console.log("Using fallback stock data due to error");
-        setCsvStocks(fallbackStocks);
-        setIsLoadingCSV(false);
-      }
-    };
-    
-    loadCSVStocks();
+    // CSV data loading removed - will use yfinance instead
+    setIsLoadingCSV(false);
   }, []);
   
   // Convert CSV stock to StockData format
-  const mapCSVStockToStockData = (csvStock: PortfolioStock): MarketStock => {
-    // Generate a realistic price between 500 and 5000
-    const price = Math.floor(Math.random() * 4500) + 500;
-    const change = (Math.random() - 0.5) * 10;
-    const changePercent = (change / price) * 100;
-
-    return {
-      SYMBOL: csvStock.symbol,
-      NAME: csvStock.name,
-      PRICE: price,
-      CHANGE: change,
-      CHANGE_PERCENT: changePercent,
-      VOLUME: Math.floor(Math.random() * 1000000).toString(),
-      MARKET_CAP: `${Math.floor(Math.random() * 100000)} Cr`,
-      PREV_CLOSE: price - (Math.random() * 50 - 25),
-      OPEN: price - (Math.random() * 40 - 20),
-      HIGH: price + Math.random() * 20,
-      LOW: price - Math.random() * 20,
-      CLOSE: price,
-      SECTOR: csvStock.sector || 'Technology',
-      timestamp: new Date(),
-      lastUpdated: new Date().toISOString()
-    };
-  };
-
   // Filter stocks based on search and sector
-  const filteredStocks = marketStocks.filter(stock => {
+  const filteredStocks = Array.isArray(marketStocks) ? marketStocks.filter(stock => {
     const matchesSearch = searchTerm === '' || 
       stock.SYMBOL.toLowerCase().includes(searchTerm.toLowerCase()) || 
       stock.NAME.toLowerCase().includes(searchTerm.toLowerCase());
@@ -539,38 +113,17 @@ const SimulatorPage: React.FC = () => {
     const matchesSector = selectedSector === null || stock.SECTOR === selectedSector;
     
     return matchesSearch && matchesSector;
-  });
-
-  // Filter CSV stocks based on search and sector
-  const filteredCsvStocks = csvStocks.filter(stock => {
-    const matchesSearch = !csvSearchTerm || 
-      stock.symbol.toLowerCase().includes(csvSearchTerm.toLowerCase()) || 
-      stock.name.toLowerCase().includes(csvSearchTerm.toLowerCase());
-      
-    const matchesSector = !csvSelectedSector || stock.sector === csvSelectedSector;
-    
-    return matchesSearch && matchesSector;
-  });
+  }) : [];
 
   // Updated handler that sets showStockDetail flag
   const handleStockSelection = async (stock: MarketStock) => {
     try {
-      // Fetch detailed historical data for the selected stock
-      const historyData = await upstoxService.fetchHistoricalData(
-        `NSE:${stock.SYMBOL}`, 
-        '1day'
-      );
-      
-      // Create a new object with the extended properties
-      const extendedStock: MarketStock & { historyData?: StockHistoryData[] } = {
-        ...stock,
-        historyData
-      };
-      setSelectedStock(extendedStock);
+      // Stock selection logic - will be updated for yfinance
+      setSelectedStock(stock);
       setShowStockDetail(true); // Show detail view
     } catch (error) {
-      console.error('Error fetching detailed stock data:', error);
-    setSelectedStock(stock);
+      console.error('Error selecting stock:', error);
+      setSelectedStock(stock);
       setShowStockDetail(true); // Show detail view even if fetch fails
     }
   };
@@ -603,38 +156,16 @@ const SimulatorPage: React.FC = () => {
     setShowStockDetail(false); // Hide detail view but keep selectedStock
   };
 
-  // Function to reload CSV data
-  const refreshCSVData = async () => {
+  // Function to reload data - updated for yfinance
+  const refreshData = async () => {
     try {
       setIsLoadingCSV(true);
-      const response = await fetch('/stocks.csv');
-      const csvText = await response.text();
-      
-      // Parse CSV manually
-      const parsed = parseCSV(csvText);
-      
-      // Filter out any incomplete data
-      const validStocks = parsed.filter(
-        stock => stock.symbol && stock.name && stock.sector
-      );
-      
-      // Take only the first 100 stocks to avoid performance issues
-      const limitedStocks = validStocks.slice(0, 100);
-      setCsvStocks(limitedStocks);
+      // Data refresh logic will be implemented with yfinance
       setIsLoadingCSV(false);
-      setCsvSearchTerm('');
-      setCsvSelectedSector('');
     } catch (error) {
-      console.error('Error loading CSV file:', error);
+      console.error('Error refreshing data:', error);
       setIsLoadingCSV(false);
     }
-  };
-
-  // Enhanced stock selection handler for CSV stocks
-  const handleCSVStockSelection = (csvStock: PortfolioStock) => {
-    const stockData = mapCSVStockToStockData(csvStock);
-    setSelectedStock(stockData);
-    setShowStockDetail(true);
   };
 
   // Updated handleTransaction function
@@ -831,16 +362,12 @@ const SimulatorPage: React.FC = () => {
   // Header gradient for simulator page
   const simulatorGradient = "linear-gradient(135deg, #10B981 0%, #3B82F6 100%)";
 
-  // List of all sectors for filtering
-  const sectors = Array.from(new Set(marketStocks.map(stock => stock.SECTOR).filter(Boolean)));
-
-  // Add real-time data refresh effect
+  // Add real-time data refresh effect - updated for yfinance
   useEffect(() => {
-    // Simple periodic refresh without WebSocket
+    // Auto-refresh functionality will be implemented with yfinance
     if (autoRefresh) {
       const refreshInterval = setInterval(() => {
-        // Refresh market data every 5 minutes
-        refreshCSVData();
+        // Refresh market data with yfinance
         setLastUpdated(new Date());
       }, 5 * 60 * 1000); // 5 minutes
       
@@ -941,7 +468,7 @@ const SimulatorPage: React.FC = () => {
                 size="sm"
                 bg="white"
                 leftIcon={<Icon as={FiRefreshCw} />}
-                onClick={refreshCSVData}
+                onClick={refreshData}
                 mr={4}
                 isLoading={isLoadingCSV}
               >
@@ -1088,7 +615,7 @@ const SimulatorPage: React.FC = () => {
 
           {/* Portfolio Details Tabs */}
           <Box mb={10}>
-            <Tabs variant="soft-rounded" colorScheme="blue" onChange={(index) => setActiveTab(index)}>
+            <Tabs variant="soft-rounded" colorScheme="blue">
               <TabList mb={6}>
                 <Tab>Holdings</Tab>
                 <Tab>Transactions</Tab>
@@ -1116,7 +643,7 @@ const SimulatorPage: React.FC = () => {
                               <MenuItem>Alphabetical</MenuItem>
                             </MenuList>
                           </Menu>
-                          <Button size="sm" leftIcon={<FiPlus />} colorScheme="blue" onClick={() => setActiveTab(2)}>
+                          <Button size="sm" leftIcon={<FiPlus />} colorScheme="blue">
                             Add Stock
                           </Button>
                         </HStack>
@@ -1279,7 +806,7 @@ const SimulatorPage: React.FC = () => {
                     
                     <Flex justify="space-between" align="center" mb={4}>
                       <Text fontSize="sm" color="gray.400">
-                        Using real-time market data from Upstox
+                        Real-time market data will be provided by yfinance
                       </Text>
                       <Flex align="center">
                         <Text fontSize="sm" color="gray.400" mr={2}>Auto-refresh:</Text>
@@ -1457,11 +984,11 @@ const SimulatorPage: React.FC = () => {
                     </Table>
                       </Box>
                     ) : (
-                      // No stocks found
+                      // No stocks message - will be updated for yfinance
                       <Box textAlign="center" p={10}>
                         <Icon as={FiAlertCircle} boxSize={10} color="gray.500" mb={4} />
-                        <Heading size="md" mb={2}>No Stocks Found</Heading>
-                        <Text>We couldn't find any stocks matching your criteria. Please try adjusting your filters.</Text>
+                        <Heading size="md" mb={2}>Market Data Loading</Heading>
+                        <Text>Market data will be loaded using yfinance integration.</Text>
                         <Button mt={4} onClick={() => setLoading(true)} leftIcon={<FiRefreshCw />}>
                           Refresh Data
                         </Button>
